@@ -12,6 +12,7 @@ const schedulesCreateService = async ({ date, hour, propertyId, userId }: ISched
     const propertiesRepository = AppDataSource.getRepository(Properties)
     const userRepository = AppDataSource.getRepository(User)
 
+
     const properties = await propertiesRepository.findOneBy({ id: propertyId })
     if (!properties) {
         throw new AppError("Property not found", 404);
@@ -22,9 +23,7 @@ const schedulesCreateService = async ({ date, hour, propertyId, userId }: ISched
         throw new AppError("User not found", 404);
     }
 
-    const shedulesExists = await schedulesRepository.find()
     const newDate = new Date(date).getDay()
-
     if (newDate === 0 || newDate === 6) {
         throw new AppError("Invalid Date", 400);
     }
@@ -34,9 +33,20 @@ const schedulesCreateService = async ({ date, hour, propertyId, userId }: ISched
         throw new AppError("Invalid hour", 400);
     }
 
-    const exists = shedulesExists.find((element) => element)
+    const existsDate = await AppDataSource.createQueryBuilder().
+        select('date').
+        from(Schedule, 'date')
+        .where("date = :date", { date: date })
+        .getOne()
 
-    if (exists) {
+    const existsHour = await AppDataSource.createQueryBuilder().
+        select('hour').
+        from(Schedule, 'hour')
+        .where("hour = :hour", { hour: hour })
+        .getOne()
+
+
+    if (existsDate && existsHour) {
         throw new AppError('Date or hour already exists', 409)
     }
 
